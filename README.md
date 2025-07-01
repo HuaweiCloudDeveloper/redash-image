@@ -1,4 +1,4 @@
-# Redash-25.1-kunpeng-HCE
+# Redash-25.1-kunpeng
 
 ## 规格说明
 
