@@ -1,0 +1,57 @@
+version: '3.8'
+services:
+  redis:
+    restart: unless-stopped
+    image: redis:alpine
+    volumes:
+      - redis_data:/data
+    networks:
+      - redash-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres:
+    restart: unless-stopped
+    image: postgres:13-alpine
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: redash
+      POSTGRES_PASSWORD: redash_pg_password
+      POSTGRES_DB: redash
+    networks:
+      - redash-net
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "redash"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redash:
+    restart: unless-stopped
+    image: redash/redash:25.1.0
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      - REDASH_DATABASE_URL
+      - REDASH_REDIS_URL
+      - REDASH_COOKIE_SECRET
+      - REDASH_SECRET_KEY
+    ports:
+      - "5000:5000"
+    networks:
+      - redash-net
+
+volumes:
+  redis_data:
+  pg_data:
+
+networks:
+  redash-net:
+    driver: bridge
